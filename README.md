@@ -1,7 +1,5 @@
-# Coworking Space Service Extension
-The Coworking Space Service is a set of APIs that enables users to request one-time tokens and administrators to authorize access to a coworking space. This service follows a microservice pattern and the APIs are split into distinct services that can be deployed and managed independently of one another.
-
-For this project, you are a DevOps engineer who will be collaborating with a team that is building an API for business analysts. The API provides business analysts basic analytics data on user activity in the service. The application they provide you functions as expected locally and you are expected to help build a pipeline to deploy it in Kubernetes.
+# Coworking Space Service
+The Coworking Space Service is a microservice-based API platform that enables users to request one-time tokens and allows administrators to manage access to coworking spaces. The project focuses on providing business analysts with basic analytics on user activity within the coworking space. As a DevOps engineer, the task was to build a deployment pipeline to automate the deployment of this API to Kubernetes, ensuring scalability and efficient management in production.
 
 ## Getting Started
 
@@ -107,25 +105,50 @@ The benefit here is that it's explicitly set. However, note that the `DB_PASSWOR
 4. Create a service and deployment using Kubernetes configuration files to deploy the application
 5. Check AWS CloudWatch for application logs
 
-### Deliverables
+### Directory Structure
 1. `Dockerfile`
-2. Screenshot of AWS CodeBuild pipeline
-3. Screenshot of AWS ECR repository for the application's repository
-4. Screenshot of `kubectl get svc`
-5. Screenshot of `kubectl get pods`
-6. Screenshot of `kubectl describe svc <DATABASE_SERVICE_NAME>`
-7. Screenshot of `kubectl describe deployment <SERVICE_NAME>`
-8. All Kubernetes config files used for deployment (ie YAML files)
-9. Screenshot of AWS CloudWatch logs for the application
-10. `README.md` file in your solution that serves as documentation for your user to detail how your deployment process works and how the user can deploy changes. The details should not simply rehash what you have done on a step by step basis. Instead, it should help an experienced software developer understand the technologies and tools in the build and deploy process as well as provide them insight into how they would release new builds.
+2. `evidences\`: screenshots of AWS CodeBuild pipeline, AWS ECR repository for the application's repository, `kubectl get svc`, `kubectl get pods`, `kubectl describe svc <DATABASE_SERVICE_NAME>`, `kubectl describe deployment <SERVICE_NAME>`, AWS CloudWatch logs for the application
+3. `deployment\`: All Kubernetes config files used for deployment (ie YAML files)
+4. `buildspec.yaml`
+5. `README.md`
 
-
-### Stand Out Suggestions
-Please provide up to 3 sentences for each suggestion. Additional content in your submission from the standout suggestions do _not_ impact the length of your total submission.
-1. Specify reasonable Memory and CPU allocation in the Kubernetes deployment configuration
-2. In your README, specify what AWS instance type would be best used for the application? Why?
-3. In your README, provide your thoughts on how we can save on costs?
-
-### Best Practices
-* Dockerfile uses an appropriate base image for the application being deployed. Complex commands in the Dockerfile include a comment describing what it is doing.
-* The Docker images use semantic versioning with three numbers separated by dots, e.g. `1.2.1` and  versioning is visible in the  screenshot. See [Semantic Versioning](https://semver.org/) for more details.
+## Setup
+1. Create an EKS Cluster
+```bash
+eksctl create cluster --name my-cluster --region us-east-1 --nodegroup-name my-nodes --node-type t3.small --nodes 1 --nodes-min 1 --nodes-max 2
+```
+2. Update the Kubeconfig
+```bash
+aws eks --region us-east-1 update-kubeconfig --name my-cluster
+```
+check config
+```bash
+kubectl config view
+```
+3. Configure a Database for the Service
+- Create PersistentVolumeClaim
+- Create PersistentVolume
+- Create Postgres Deployment
+- Apply YAML configurations
+- Test Database Connection
+- Run Seed Files: 
+```bash
+export DB_PASSWORD=mypassword PGPASSWORD="$DB_PASSWORD" psql --host 127.0.0.1 -U myuser -d mydatabase -p 5433 < <FILE_NAME.sql>
+```
+4. Set Up SSH Key on github
+5. Build the Analytics Application Locally
+- Install Dependencies with python
+- Set up port-forwarding to postgresql-service
+```bash
+kubectl port-forward service/postgresql-service 5433:5432 &
+```
+- Create variable enviroment
+```bash
+export DB_USERNAME=myuser export DB_PASSWORD=${POSTGRES_PASSWORD} export DB_HOST=127.0.0.1 export DB_PORT=5433 export DB_NAME=mydatabase
+```
+6. Deployment
+- Create a buildspec.yaml
+- Create buid project on codebuid: connect with GitHub repository
+- Run build
+- Update file: deployment/configmap.yaml, deployment/coworking.yaml
+- kubectl apply file
