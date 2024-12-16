@@ -6,9 +6,11 @@ phases:
       - echo Logging into ECR
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
       - echo Retrieving secrets from AWS Secrets Manager
-      - export SECRETS=$(aws secretsmanager get-secret-value --secret-id my-secret-id | jq -r '.SecretString')
-      - export DB_USERNAME=$(echo $SECRETS | jq -r '.DB_USERNAME')
-      - export DB_PASSWORD=$(echo $SECRETS | jq -r '.DB_PASSWORD')
+      - echo "Installing dependencies..."
+      - pip install yq
+      - echo "Extracting values from YAML files..."
+      - export DB_USERNAME=$(yq eval '.data.POSTGRES_USER' configMap.yaml)
+      - export DB_PASSWORD=$(yq eval '.data.POSTGRES_PASSWORD' postgresql-secret.yaml | base64 -d)
       - export IMAGE_TAG=$(date +%Y%m%d%H%M%S)
   build:
     commands:
